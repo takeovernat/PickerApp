@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import "./App.css";
 
 function App() {
-  const [picks, setPicks] = useState(0);
+  const [failedpicks, setFailedPicks] = useState([]);
+  const [picks, setPicks] = useState([]);
   const [orderlists, setOrderLists] = useState([]);
   const [orders, setOrders] = useState([]);
   const [orderlistsize, setOrderListSize] = useState(0);
@@ -11,7 +12,7 @@ function App() {
 
   useEffect(() => {
     async function fetchOrderLists() {
-      let response = await fetch("http://localhost:8000/orderlists/");
+      let response = await fetch("http://localhost:8000/orderlines/");
       response = await response.json();
       setOrderLists(response);
       setOrderListSize(response.length);
@@ -41,13 +42,19 @@ function App() {
       referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
       body: data, // body data type must match "Content-Type" header
     });
-    console.log(response.json);
+    //console.log(response.json());
     return response.json();
+  }
+
+  async function fetchLinesbyOrder(orderNum) {
+    let res = await fetch(`http://localhost:8000/linefromorder/${orderNum}`);
+    res = await res.json();
+    return res;
   }
 
   const handleException = (e) => {
     console.log(e);
-    let url = "http://localhost:8000/orderlists/update/1";
+    let url = "http://localhost:8000/orderlines/update/1";
     let reason = "unknown";
     const currentOrder = orderlists[listindex];
     let stock = currentOrder.sku.on_hand;
@@ -62,11 +69,56 @@ function App() {
   const handlePick = () => {
     console.log("picked");
     setListIndex((prev) => prev + 1);
-    console.log(orderlists);
-    console.log(orderlistsize);
     console.log(listindex, orderlistsize);
     console.log((listindex + 1) / orderlistsize);
-    console.log("tim", orders);
+    // console.log("orders", orders);
+
+    function handlelines(linesbyOrder, order_number) {
+      linesbyOrder.forEach((line) => {
+        async function getProduct() {
+          let product = await fetch(
+            `http://localhost:8000/productmaster/${line.sku.sku}`
+          );
+          product = await product.json();
+          return product;
+        }
+
+        getProduct().then((res) => {
+          if (res.on_hand >= line.pick_quantity) {
+            setPicks((prev) => [...prev, line.pick_id]);
+            console.log(
+              "selected pick ",
+              line.pick_id,
+              " substarted ",
+              line.pick_quantity,
+              " from",
+              res.on_hand
+            );
+          } else {
+            setFailedPicks((prev) => [...prev, line.pick_id]);
+            console.log(
+              "failed pick ",
+              line.pick_id,
+              " requested ",
+              line.pick_quantity,
+              " from",
+              res.on_hand
+            );
+          }
+        });
+
+        makeUpdateCall(
+          `http://localhost:8000/productmaster/update/${line.sku.sku}`,
+          line.pick_quantity
+        ).catch((err) => console.log(line.sku.sku));
+      });
+    }
+
+    orders.forEach((o) => {
+      fetchLinesbyOrder(o.order_number).then((data) => {
+        handlelines(data, o.order_number);
+      });
+    });
 
     if (listindex >= orderlistsize - 1) {
       setEndOfList(true);
@@ -127,6 +179,10 @@ function App() {
                   >
                     Exception
                   </button>
+
+                  {picks.map((p) => (
+                    <p className="text-black"> {p} </p>
+                  ))}
                 </div>
                 {/* <p className="mb-4 text-3xl tracking-tight font-bold text-black md:text-4xl">
                 Internal Server Error.

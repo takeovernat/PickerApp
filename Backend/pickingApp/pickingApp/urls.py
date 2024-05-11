@@ -21,10 +21,19 @@ from picks import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("orderlists/", views.getAllOrderLines, name="orders-lists" ),
-    path('orderlists/<int:pk>', views.getOneOrderLine, name='order-detail'),
-    path('orderlists/update/<int:pk>', views.updateOLStatus, name='order-update'),
+
+    #order lines
+    path("orderlines/", views.getAllOrderLines, name="orders-lines" ),
+    path('orderlines/<int:pk>', views.getOneOrderLine, name='order-detail'),
+    path('orderlines/update/<int:pk>', views.updateOLStatus, name='order-update'),
+
+    #product master
+    path ('productmaster/', views.getAllProducts, name="get-products"),
+    path('productmaster/<int:pk>', views.getOneProduct, name="get-product"),
     path('productmaster/update/<int:pk>', views.updateStockCount, name='product-update'),
-    path('orders/', views.getAllOrders, name="all-orders")
-    
+
+    #orders
+    path('orders/', views.getAllOrders, name="all-orders"),
+    path('orders/<str:pk>', views.getOneOrder, name="one-order"),
+    path('linefromorder/<str:on>', views.getOrderLineFromOrderNumber, name="line-from-order")
 ]
