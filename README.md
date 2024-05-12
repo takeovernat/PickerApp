@@ -16,7 +16,7 @@ an automated picking app to reduce errors and boost efficiency for warehouses.
 
 `pip install -r requirements.txt`
 
-## run banceknd
+## run backend
 
 `python3 manage.py runserver`
 
@@ -30,8 +30,10 @@ django should now be running on http://localhost:8000/
 
 `npm start`
 
+the app should now be running on http://localhost:3000/
+
 ## notes
 
-to reset test data in database run the script
+with db.sqlite3 file commited to this repo you don't have to run any migrations, however to reset test data in database to the original test data run the script
 
 `python3 manage.py runscript populate`

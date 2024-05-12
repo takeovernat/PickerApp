@@ -6,6 +6,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ErrorIcon from "@mui/icons-material/Error";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import BasicTable from "./BasicTable";
 
 function App() {
   const [failedpicks, setFailedPicks] = useState([]);
@@ -57,7 +58,7 @@ function App() {
   // };
 
   const handlePrevious = () => {
-    console.log(orderlists);
+    // console.log(orderlists);
     setListIndex((prev) => prev + 1);
     setShowBtn(false);
   };
@@ -73,10 +74,6 @@ function App() {
   }
 
   const handleNext = (e) => {
-    console.log(exception);
-    console.log(proccessed);
-    console.log(listindex);
-    console.log(orderlists[listindex]);
     if (listindex == 0) {
       fetch("http://localhost:8000/orderlines/")
         .then((res) => res.json())
@@ -100,13 +97,13 @@ function App() {
       setListIndex((prev) => prev + 1);
     }
 
-    console.log(listindex, orderlistsize);
-    console.log((listindex + 1) / orderlistsize);
+    // console.log(listindex, orderlistsize);
+    // console.log((listindex + 1) / orderlistsize);
     // console.log("orders", orders);
 
     function handlelines(linesbyOrder, order_number) {
       linesbyOrder.forEach((line) => {
-        // console.log("processing: ", line);
+        // console.log("processing... ", line);
         async function getProduct() {
           let product = await fetch(
             `http://localhost:8000/productmaster/${line.sku.sku}`
@@ -161,14 +158,9 @@ function App() {
     if (listindex >= orderlistsize - 1) {
       setEndOfList(true);
     }
-
-    // console.log("inex ", listindex);
-    // console.log("od ", orderlists);
   };
 
   function handleReport() {
-    console.log("report", picks);
-
     fetch("http://localhost:8000/orderlines/regected")
       .then((res) => res.json())
       .then((data) => setReport(data));
@@ -251,7 +243,7 @@ function App() {
                     </Alert>
                   )}
               </div>
-              <div className="mt-10 flex justify-end">
+              <div className="mt-10 flex justify-end  ">
                 {proccessed && showBtn && (
                   <button
                     // disabled={true}
@@ -289,9 +281,10 @@ function App() {
                   <h3 className="mb-3 text-lg font-bold">
                     Unsuccessful Orders:
                   </h3>
-                  {report.length == 0 && <p>All orderslines succeded</p>}
 
-                  {report.map((rep) => (
+                  {report.length == 0 && <p>All orders lines succeded</p>}
+
+                  {/* {report.map((rep) => (
                     <div className="mb-3">
                       <p>Order Number: {rep.order_number.order_number}</p>
                       <p>Customer Name: {rep.order_number.customer_name}</p>
@@ -300,7 +293,10 @@ function App() {
                       <p>Location: {rep.sku.location_id}</p>
                       <p>{rep.pick_status}</p>
                     </div>
-                  ))}
+                  ))} */}
+                  {report.length > 0 && (
+                    <BasicTable report={orderlists}></BasicTable>
+                  )}
                 </div>
               )}
 

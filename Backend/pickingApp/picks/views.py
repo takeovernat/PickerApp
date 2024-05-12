@@ -9,6 +9,8 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
+from django.contrib.auth.decorators import login_required
+
 
 
 # Create your views here.
@@ -22,19 +24,20 @@ def getLinebyStatus(request):
 
 @api_view(['GET'])
 def getRegectedLines(request):
-        orderlines = orderLines.objects.filter(pick_status__contains = "exception") ##filter by pending 
+        orderlines = orderLines.objects.filter(pick_status__contains = "exception") ##filter by exception 
         orderline_serializer = OrderLinesSerializer(orderlines, many=True)
         data = orderline_serializer.data
         return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def getPickedLines(request):
-        orderlines = orderLines.objects.filter(pick_status = "picked") ##filter by pending 
+        orderlines = orderLines.objects.filter(pick_status = "picked") ##filter by picked 
         orderline_serializer = OrderLinesSerializer(orderlines, many=True)
         data = orderline_serializer.data
         return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(['GET',])    
+# @login_required(login_url="/admin") 
 def getAllOrderLines(request):
         orderlines = orderLines.objects.all() 
         orderline_serializer = OrderLinesSerializer(orderlines, many=True)
