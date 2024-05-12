@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 import "./App.css";
+import { makeUpdateCall, fetchLinesbyOrder } from "./utils";
+import Alert from "@mui/material/Alert";
+import CheckIcon from "@mui/icons-material/Check";
+import ErrorIcon from "@mui/icons-material/Error";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 
 function App() {
   const [failedpicks, setFailedPicks] = useState([]);
@@ -7,9 +13,16 @@ function App() {
   const [orderlists, setOrderLists] = useState([]);
   const [orders, setOrders] = useState([]);
   const [orderlistsize, setOrderListSize] = useState(0);
-  const [listindex, setListIndex] = useState(0);
+  const [listindex, setListIndex] = useState(-1);
   const [endoflist, setEndOfList] = useState(false);
+  const [proccessed, setProccessed] = useState(false);
+  const [colorOfCard, setColorOfCard] = useState("bg-gray-100");
+  const [exception, setException] = useState(false);
+  const [reporttoggle, setReportToggle] = useState(false);
+  const [report, setReport] = useState([]);
+  const [showBtn, setShowBtn] = useState(true);
 
+  //inital calls to get orders and orderlines
   useEffect(() => {
     async function fetchOrderLists() {
       let response = await fetch("http://localhost:8000/orderlines/");
@@ -26,83 +39,104 @@ function App() {
 
     fetchOrderLists();
     fetchOrders();
-  }, []);
+  }, [proccessed]);
 
-  async function makeUpdateCall(url = "", data = {}) {
-    const response = await fetch(url, {
-      method: "PUT", // *GET, POST, PUT, DELETE, etc.
-      mode: "cors", // no-cors, *cors, same-origin
-      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "same-origin", // include, *same-origin, omit
-      headers: {
-        "Content-Type": "application/json",
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      redirect: "follow", // manual, *follow, error
-      referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-      body: data, // body data type must match "Content-Type" header
-    });
-    //console.log(response.json());
-    return response.json();
-  }
+  // const fetchCurrentScreen = (id) => {
+  //   fetch(`http://localhost:8000/orderlines/${id}`)
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       console.log(data);
+  //       if (data.pick_status == "picked") {
+  //         setColorOfCard("bg-green-50");
+  //         setException(false);
+  //       } else {
+  //         setColorOfCard("bg-red-50");
+  //         setException(true);
+  //       }
+  //     });
+  // };
 
-  async function fetchLinesbyOrder(orderNum) {
-    let res = await fetch(`http://localhost:8000/linefromorder/${orderNum}`);
-    res = await res.json();
-    return res;
-  }
-
-  const handleException = (e) => {
-    console.log(e);
-    let url = "http://localhost:8000/orderlines/update/1";
-    let reason = "unknown";
-    const currentOrder = orderlists[listindex];
-    let stock = currentOrder.sku.on_hand;
-    console.log("jim ", stock);
-    if (stock == 0 || stock < currentOrder.pick_quantity) {
-      reason = "Not enough items in stock";
-    }
-
-    makeUpdateCall(url, `exception: ${reason}`);
+  const handlePrevious = () => {
+    console.log(orderlists);
+    setListIndex((prev) => prev + 1);
+    setShowBtn(false);
   };
 
-  const handlePick = () => {
-    console.log("picked");
-    setListIndex((prev) => prev + 1);
+  function setStatus(status) {
+    if (status == "picked") {
+      setException(false);
+      setColorOfCard("bg-green-50");
+    } else {
+      setException(true);
+      setColorOfCard("bg-red-50");
+    }
+  }
+
+  const handleNext = (e) => {
+    console.log(exception);
+    console.log(proccessed);
+    console.log(listindex);
+    console.log(orderlists[listindex]);
+    if (listindex == 0) {
+      fetch("http://localhost:8000/orderlines/")
+        .then((res) => res.json())
+        .then((data) => setOrderLists(data));
+    }
+    if (listindex >= orderlistsize - 1) {
+      setListIndex(0);
+      // fetchCurrentScreen(orderlists[0].id);
+      let status = orderlists[0].pick_status;
+      setStatus(status);
+    } else {
+      setListIndex((prev) => prev + 1);
+      let status = orderlists[listindex + 1].pick_status;
+      setStatus(status);
+    }
+  };
+
+  const handleProcess = (e) => {
+    let targetId = e.target.value;
+    if (targetId == -1) {
+      setListIndex((prev) => prev + 1);
+    }
+
     console.log(listindex, orderlistsize);
     console.log((listindex + 1) / orderlistsize);
     // console.log("orders", orders);
 
     function handlelines(linesbyOrder, order_number) {
       linesbyOrder.forEach((line) => {
+        // console.log("processing: ", line);
         async function getProduct() {
           let product = await fetch(
             `http://localhost:8000/productmaster/${line.sku.sku}`
           );
           product = await product.json();
+          //check for 404
           return product;
         }
 
         getProduct().then((res) => {
-          if (res.on_hand >= line.pick_quantity) {
-            setPicks((prev) => [...prev, line.pick_id]);
-            console.log(
-              "selected pick ",
-              line.pick_id,
-              " substarted ",
-              line.pick_quantity,
-              " from",
-              res.on_hand
+          if (
+            res.on_hand >= line.pick_quantity &&
+            res.location_id == line.location_id
+          ) {
+            setPicks((prev) => [...prev, line.id]);
+
+            makeUpdateCall(
+              `http://localhost:8000/orderlines/update/${line.id}`,
+              "picked"
             );
-          } else {
-            setFailedPicks((prev) => [...prev, line.pick_id]);
-            console.log(
-              "failed pick ",
-              line.pick_id,
-              " requested ",
-              line.pick_quantity,
-              " from",
-              res.on_hand
+          } else if (res.location_id != line.location_id) {
+            makeUpdateCall(
+              `http://localhost:8000/orderlines/update/${line.id}`,
+              "exception: item not available at location"
+            );
+          } else if (res.on_hand < line.pick_quantity) {
+            setFailedPicks((prev) => [...prev, line.id]);
+            makeUpdateCall(
+              `http://localhost:8000/orderlines/update/${line.id}`,
+              "exception: not enough items in stock"
             );
           }
         });
@@ -110,20 +144,37 @@ function App() {
         makeUpdateCall(
           `http://localhost:8000/productmaster/update/${line.sku.sku}`,
           line.pick_quantity
-        ).catch((err) => console.log(line.sku.sku));
+        ).catch((err) => console.log(err));
       });
     }
 
     orders.forEach((o) => {
-      fetchLinesbyOrder(o.order_number).then((data) => {
-        handlelines(data, o.order_number);
-      });
+      fetchLinesbyOrder(o.order_number)
+        .then((data) => {
+          handlelines(data, o.order_number);
+        })
+        .then((d) => {
+          setProccessed(true);
+        });
     });
 
     if (listindex >= orderlistsize - 1) {
       setEndOfList(true);
     }
+
+    // console.log("inex ", listindex);
+    // console.log("od ", orderlists);
   };
+
+  function handleReport() {
+    console.log("report", picks);
+
+    fetch("http://localhost:8000/orderlines/regected")
+      .then((res) => res.json())
+      .then((data) => setReport(data));
+
+    setReportToggle((prev) => !prev);
+  }
 
   return (
     orderlists.length > 0 &&
@@ -134,63 +185,134 @@ function App() {
             <h1 className="mb-4 font-extrabold text-4xl">pickingApp</h1>
             <progress className="" value={(listindex + 1) / orderlistsize} />
             <p className="text-sm">
-              {listindex}/{orderlistsize} picks proccessed
+              {listindex + 1}/{orderlistsize} picks proccessed
             </p>
 
             <div className="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
-              <div className="inline-block mx-auto max-w-screen-sm text-center">
-                <label>
-                  <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
-                    Location: {orderlists[listindex].location_id}
-                    {/* <input className="border-2 ml-4" name="tim" /> */}
-                  </p>
-                </label>
+              {listindex != -1 && (
+                <div
+                  className={`inline-block mx-auto max-w-screen-sm text-center w-full ${colorOfCard}`}
+                >
+                  <label>
+                    <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
+                      Location:{" "}
+                      {listindex >= 0
+                        ? orderlists[listindex].location_id
+                        : "..."}
+                      {/* <input className="border-2 ml-4" name="tim" /> */}
+                    </p>
+                  </label>
 
-                <label>
-                  <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
-                    SKU: {orderlists[listindex].sku.sku}
-                    {/* <input className="border-2 ml-12" name="tim" /> */}
-                  </p>
-                </label>
+                  <label>
+                    <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
+                      SKU:{" "}
+                      {listindex >= 0 ? orderlists[listindex].sku.sku : "..."}
+                      {/* <input className="border-2 ml-12" name="tim" /> */}
+                    </p>
+                  </label>
 
-                <label>
-                  <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
-                    Title: {orderlists[listindex].sku.title}
-                    {/* <input className="border-2 ml-12" name="tim" /> */}
-                  </p>
-                </label>
+                  <label>
+                    <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
+                      Title:{" "}
+                      {listindex >= 0 ? orderlists[listindex].sku.title : "..."}
+                      {/* <input className="border-2 ml-12" name="tim" /> */}
+                    </p>
+                  </label>
 
-                <label>
-                  <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
-                    Quantity: {orderlists[listindex].pick_quantity}
-                    {/* <input className="border-2 ml-4" name="tim" /> */}
-                  </p>
-                </label>
-                <div className="my-12">
-                  <button
-                    onClick={handlePick}
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mx-5 rounded"
+                  <label>
+                    <p className="mb-4 tracking-tight font-extrabold text-primary-600 dark:text-primary-500">
+                      Quantity:{" "}
+                      {listindex >= 0
+                        ? orderlists[listindex].pick_quantity
+                        : "..."}
+                      {/* <input className="border-2 ml-4" name="tim" /> */}
+                    </p>
+                  </label>
+                  <div className="my-2"></div>
+                </div>
+              )}
+              <div className="mt-5">
+                {exception && listindex >= 0 && (
+                  <Alert
+                    icon={<ErrorIcon fontSize="inherit" />}
+                    severity="error"
                   >
-                    Pick
-                  </button>
+                    {orderlists[listindex].pick_status}
+                  </Alert>
+                )}
+                {!exception &&
+                  listindex >= 0 &&
+                  orderlists[listindex].pick_status == "picked" && (
+                    <Alert
+                      icon={<CheckIcon fontSize="inherit" />}
+                      severity="success"
+                    >
+                      Picked
+                    </Alert>
+                  )}
+              </div>
+              <div className="mt-10 flex justify-end">
+                {proccessed && showBtn && (
                   <button
-                    onClick={handleException}
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 mx-5 rounded"
+                    // disabled={true}
+                    onClick={handlePrevious}
+                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                   >
-                    Exception
+                    show cards
                   </button>
+                )}
+                {proccessed && listindex != -1 && (
+                  <button
+                    onClick={handleNext}
+                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 mx-5 rounded"
+                  >
+                    <NavigateNextIcon></NavigateNextIcon>
+                  </button>
+                )}
+              </div>
+              <div className="w-full block m-auto">
+                {proccessed && (
+                  <button
+                    onClick={handleReport}
+                    className="block mt-16 bg-gray-500 hover:bg-gray-700 text-white  my-3 rounded"
+                  >
+                    Report
+                  </button>
+                )}
+              </div>
+              {reporttoggle && (
+                <div>
+                  <h3 className="mb-3 text-lg font-bold">
+                    successfull processed {picks.length} / {orderlists.length}{" "}
+                    order lines
+                  </h3>
+                  <h3 className="mb-3 text-lg font-bold">
+                    Unsuccessful Orders:
+                  </h3>
+                  {report.length == 0 && <p>All orderslines succeded</p>}
 
-                  {picks.map((p) => (
-                    <p className="text-black"> {p} </p>
+                  {report.map((rep) => (
+                    <div className="mb-3">
+                      <p>Order Number: {rep.order_number.order_number}</p>
+                      <p>Customer Name: {rep.order_number.customer_name}</p>
+                      <p>Title: {rep.sku.title}</p>
+                      <p>Order Date: {rep.order_number.order_date}</p>
+                      <p>Location: {rep.sku.location_id}</p>
+                      <p>{rep.pick_status}</p>
+                    </div>
                   ))}
                 </div>
-                {/* <p className="mb-4 text-3xl tracking-tight font-bold text-black md:text-4xl">
-                Internal Server Error.
-              </p>
-              <p className="mb-4 text-lg font-light text-gray-500 dark:text-gray-400">
-                We are already working to solve the problem.{" "}
-              </p> */}
-              </div>
+              )}
+
+              {!proccessed && (
+                <button
+                  onClick={handleProcess}
+                  value={listindex >= 0 ? orderlists[listindex].id : ""}
+                  className="block mt-16 bg-gray-400 hover:bg-gray-700 text-white font-bold py-2 px-4 mx-5 rounded w-11/12"
+                >
+                  Process picks
+                </button>
+              )}
             </div>
           </div>
         </div>

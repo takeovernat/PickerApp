@@ -26,6 +26,8 @@ urlpatterns = [
     path("orderlines/", views.getAllOrderLines, name="orders-lines" ),
     path('orderlines/<int:pk>', views.getOneOrderLine, name='order-detail'),
     path('orderlines/update/<int:pk>', views.updateOLStatus, name='order-update'),
+    path("orderlines/pending", views.getLinebyStatus , name="lines_by_status"),
+    path("orderlines/regected", views.getRegectedLines, name="regected"),
 
     #product master
     path ('productmaster/', views.getAllProducts, name="get-products"),

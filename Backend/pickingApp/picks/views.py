@@ -13,10 +13,30 @@ from rest_framework.decorators import api_view
 
 # Create your views here.
 
+@api_view(['GET'])
+def getLinebyStatus(request):
+        orderlines = orderLines.objects.filter(pick_status = "pending") ##filter by pending 
+        orderline_serializer = OrderLinesSerializer(orderlines, many=True)
+        data = orderline_serializer.data
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def getRegectedLines(request):
+        orderlines = orderLines.objects.filter(pick_status__contains = "exception") ##filter by pending 
+        orderline_serializer = OrderLinesSerializer(orderlines, many=True)
+        data = orderline_serializer.data
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def getPickedLines(request):
+        orderlines = orderLines.objects.filter(pick_status = "picked") ##filter by pending 
+        orderline_serializer = OrderLinesSerializer(orderlines, many=True)
+        data = orderline_serializer.data
+        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(['GET',])    
 def getAllOrderLines(request):
-        orderlines = orderLines.objects.all()
+        orderlines = orderLines.objects.all() 
         orderline_serializer = OrderLinesSerializer(orderlines, many=True)
         data = orderline_serializer.data
         return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
@@ -61,9 +81,15 @@ def updateStockCount(request, pk):
         pm_data = pm_serializer.data
         body_unicode = request.body.decode('utf-8')
         qty = json.loads(body_unicode)
-        newQty = pm_data['on_hand'] = pm_data['on_hand'] - qty
-        if newQty < 1:
-                return Response(ProductMasterSerializer(productmaster).data, status=status.HTTP_409_CONFLICT)
+        # print(pm_data['on_hand'], qty)
+        newQty = pm_data['on_hand'] - qty
+        print(pm_data['on_hand'], qty, newQty)
+        if newQty < 0:
+                return Response({"out of stock"}, status=status.HTTP_200_OK)
+        if newQty == 0:
+                productmaster.on_hand = newQty
+                productmaster.save()
+                return Response(ProductMasterSerializer(productmaster).data, status=status.HTTP_200_OK)
 
         productmaster.on_hand = newQty
         productmaster.save()
