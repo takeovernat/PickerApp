@@ -42,27 +42,12 @@ function App() {
     fetchOrders();
   }, [proccessed]);
 
-  // const fetchCurrentScreen = (id) => {
-  //   fetch(`http://localhost:8000/orderlines/${id}`)
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       console.log(data);
-  //       if (data.pick_status == "picked") {
-  //         setColorOfCard("bg-green-50");
-  //         setException(false);
-  //       } else {
-  //         setColorOfCard("bg-red-50");
-  //         setException(true);
-  //       }
-  //     });
-  // };
-
   const handlePrevious = () => {
     // console.log(orderlists);
     setListIndex((prev) => prev + 1);
     setShowBtn(false);
   };
-
+  //change color of card based on status
   function setStatus(status) {
     if (status == "picked") {
       setException(false);
@@ -72,7 +57,7 @@ function App() {
       setColorOfCard("bg-red-50");
     }
   }
-
+  //when next button is pressed
   const handleNext = (e) => {
     if (listindex == 0) {
       fetch("http://localhost:8000/orderlines/")
@@ -175,10 +160,26 @@ function App() {
         <div className="w-full max-w-lg px-10 py-8 mx-auto bg-white rounded-lg shadow-xl">
           <div className="max-w-md mx-auto space-y-1">
             <h1 className="mb-4 font-extrabold text-4xl">pickingApp</h1>
-            <progress className="" value={(listindex + 1) / orderlistsize} />
-            <p className="text-sm">
-              {listindex + 1}/{orderlistsize} picks proccessed
-            </p>
+            {!showBtn && (
+              <progress className="" value={(listindex + 1) / orderlistsize} />
+            )}
+            {showBtn && (
+              <progress className="" value={orderlistsize / orderlistsize} />
+            )}
+            {!showBtn && (
+              <p className="text-sm">
+                {listindex + 1}/{orderlistsize} picks proccessed
+              </p>
+            )}
+            {showBtn && proccessed && (
+              <p className="text-sm">
+                {orderlistsize}/{orderlistsize} picks proccessed
+              </p>
+            )}
+
+            {showBtn && !proccessed && (
+              <p>{orderlistsize} order lines pending</p>
+            )}
 
             <div className="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
               {listindex != -1 && (

@@ -44,7 +44,7 @@ export default function BasicTable({ report }) {
     );
   });
 
-  console.log("nate ", rows);
+  //   console.log("nate ", rows);
   return (
     <TableContainer component={Paper}>
       <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -61,7 +61,7 @@ export default function BasicTable({ report }) {
         <TableBody>
           {rows.map((row) => (
             <TableRow
-              key={row.name}
+              key={row.order_date}
               sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
             >
               <TableCell align="right">{row.order_number}</TableCell>
