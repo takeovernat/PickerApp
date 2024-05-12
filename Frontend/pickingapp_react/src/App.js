@@ -77,6 +77,7 @@ function App() {
   };
 
   const handleProcess = (e) => {
+    setStatus(orderlists[listindex + 1].pick_status);
     let targetId = e.target.value;
     if (targetId == -1) {
       setListIndex((prev) => prev + 1);
