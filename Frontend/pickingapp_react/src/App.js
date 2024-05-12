@@ -245,7 +245,7 @@ function App() {
                     </Alert>
                   )}
               </div>
-              <div className="mt-10 flex justify-end  ">
+              <div className={`mt-10 flex justify-start  `}>
                 {proccessed && showBtn && (
                   <button
                     // disabled={true}
@@ -277,12 +277,10 @@ function App() {
               {reporttoggle && (
                 <div>
                   <h3 className="mb-3 text-lg font-bold">
-                    successfull processed {picks.length} / {orderlists.length}{" "}
+                    successfully picked {picks.length} / {orderlists.length}{" "}
                     order lines
                   </h3>
-                  <h3 className="mb-3 text-lg font-bold">
-                    Unsuccessful Orders:
-                  </h3>
+                  <h3 className="mb-3 text-lg font-bold">Rejected Orders:</h3>
 
                   {report.length == 0 && <p>All orders lines succeded</p>}
 
