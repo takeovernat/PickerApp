@@ -72,10 +72,10 @@ def updateOLStatus(request, pk):
                 return Response(data, status=status.HTTP_201_CREATED)
         else:
                invalidMessage = body + " is invalid. Please send picked or exeption: meesage"  
-               return Response(invalidMessage, status=status.HTTP_201_CREATED)
+               return Response(invalidMessage, status=status.HTTP_201_CREATED) 
         return Response(request.body, status=status.HTTP_201_CREATED)
 
-    
+#verify that input in body is valid    
 @csrf_exempt 
 @api_view(['PUT',])
 def updateStockCount(request, pk):
@@ -98,6 +98,19 @@ def updateStockCount(request, pk):
         productmaster.save()
 
         return Response(ProductMasterSerializer(productmaster).data, status=status.HTTP_201_CREATED)
+
+#when we need to restock some items
+@csrf_exempt 
+@api_view(['PUT',])
+def setStockCount(request, pk):
+       pass
+
+@api_view(['GET',])
+def productOutOfStock(request):
+       product = productMaster.objects.filter(on_hand = 0)
+       pm_serializer = ProductMasterSerializer(product, many=True)
+       data = pm_serializer.data
+       return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
 
 @api_view(['GET',])
 def getOneProduct(request, pk):
@@ -135,7 +148,6 @@ def getOrderLineFromOrderNumber(request, on):
        orderline = orderLines.objects.filter(order_number=on)
        orderline_serializer = OrderLinesSerializer(orderline, many=True)
        data = orderline_serializer.data
-#        print(data)
 
        return JsonResponse(data, safe=False, status=status.HTTP_200_OK)
        

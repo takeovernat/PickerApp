@@ -6,7 +6,7 @@ class productMaster(models.Model):
     sku = models.IntegerField(primary_key=True)
     title = models.CharField(max_length=120)
     location_id = models.CharField(max_length=120)
-    on_hand = models.IntegerField()
+    on_hand = models.IntegerField() 
 
     def __str__(self):
         return "{0} {1} {2} {3}".format(self.sku, self.title, self.location_id, self.on_hand)
@@ -23,12 +23,12 @@ class orders(models.Model):
         return "{0} {1} {2}".format(self.order_number, self.customer_name, self.order_date)
 
 class orderLines(models.Model):
-    pick_id = models.IntegerField()
+    pick_id = models.IntegerField() #not unique so not a good idea to use as pk
     order_number = models.ForeignKey(orders, on_delete=models.CASCADE)
     sku = models.ForeignKey(productMaster, on_delete=models.CASCADE)
     location_id = models.CharField(max_length=120)
-    pick_quantity = models.IntegerField()
-    pick_status = models.CharField(max_length=120, default="pending")
+    pick_quantity = models.IntegerField() #not null by default
+    pick_status = models.CharField(max_length=120, default="pending") #added by me 
 
     def __str__(self):
         return "{0} {1} {2}".format(self.pick_id, self.order_number, self.pick_quantity)

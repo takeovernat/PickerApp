@@ -33,9 +33,10 @@ urlpatterns = [
     path ('productmaster/', views.getAllProducts, name="get-products"),
     path('productmaster/<int:pk>', views.getOneProduct, name="get-product"),
     path('productmaster/update/<int:pk>', views.updateStockCount, name='product-update'),
+    path('productmaster/outofstock', views.productOutOfStock, name="outofstock"),
 
     #orders
-    path('orders/', views.getAllOrders, name="all-orders"),
+    path('orders/', views.getAllOrders, name="all-orders"), #idealy we would limit this to a date
     path('orders/<str:pk>', views.getOneOrder, name="one-order"),
     path('linefromorder/<str:on>', views.getOrderLineFromOrderNumber, name="line-from-order")
 ]
